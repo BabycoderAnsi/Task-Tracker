@@ -14,6 +14,7 @@ function loadTasks() {
     return JSON.parse(fileContent);
   } catch (error) {
     console.error("Error in loadTasks:", error.message);
+    return [];
   }
 }
 
@@ -98,14 +99,22 @@ function listTasks(status) {
 }
 
 function deleteTask(id) {
-  const tasks = loadTasks;
-  if (!(id in tasks)) {
-    console.error("Task not found");
-    return;
+  try {
+    const tasks = loadTasks();
+
+    const initialLength = tasks.length;
+    const updatedTasks = tasks.filter((task) => task.id !== id);
+
+    if (updatedTasks.length === initialLength) {
+      console.error(`Task with ID:${id} not found`);
+      return;
+    }
+
+    saveTasks(updatedTasks);
+    console.log(`Delete task with ID: ${id}.`);
+  } catch (error) {
+    console.error("Error in deleteTask:", error.message);
   }
-  delete tasks[id];
-  saveTasks(tasks);
-  return `Deleted ID:${id} successfully`;
 }
 
 function main() {
@@ -129,7 +138,7 @@ function main() {
       } else if (args.length === 2) {
         listTasks(args[1]);
       } else {
-        console.log("Usage: task-cli list [<status>]");
+        console.log("Usage: index list [<status>]");
         return;
       }
       break;
@@ -138,7 +147,7 @@ function main() {
       return;
     case "delete":
       if (args.length !== 2) {
-        console.log("Usage: task-cli delete <id>");
+        console.log("Usage: index delete <id>");
         return;
       }
       deleteTask(parseInt(args[1]));
