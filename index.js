@@ -27,14 +27,6 @@ function isTaskUnique(tasks, description, Author) {
 
 function addTasks(description, Author) {
   try {
-    // Debugging inputs
-    console.log(
-      "Inside addTasks function. Description:",
-      description,
-      "Author:",
-      Author
-    );
-
     // Validation for description and Author
     if (!description || description.trim().length === 0) {
       console.error("Error: Description is required and cannot be empty.");
@@ -61,13 +53,10 @@ function addTasks(description, Author) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-
-    // Debugging the newTask object
-    console.log("New Task object:", newTask);
-
     tasks.push(newTask);
     saveTasks(tasks);
     console.log(`Task added successfully (ID: ${newTask.id})`);
+    
   } catch (error) {
     console.error("Error in addTasks:", error.message);
   }
@@ -84,7 +73,6 @@ function saveTasks(tasks) {
 function listTasks(status) {
   try {
     const tasks = loadTasks();
-    console.log("Loaded tasks:", tasks);
     const taskFilterByStatus = status
       ? tasks.filter((task) => task.status === status)
       : tasks;
@@ -120,7 +108,6 @@ function deleteTask(id) {
 function main() {
   const args = process.argv.slice(2);
   const command = args[0];
-  console.log("Command:", command, "Args:", args);
 
   switch (command) {
     case "add":
