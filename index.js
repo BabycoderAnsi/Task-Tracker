@@ -18,28 +18,28 @@ function loadTasks() {
   }
 }
 
-function isTaskUnique(tasks, description, Author) {
+function isTaskUnique(tasks, description, author) {
   // Check if a task with the same description and author already exists
   return !tasks.some(
-    (task) => task.description === description && task.Author === Author
+    (task) => task.description === description && task.author === author
   );
 }
 
-function addTasks(description, Author) {
+function addTasks(description, author) {
   try {
-    // Validation for description and Author
+    // Validation for description and author
     if (!description || description.trim().length === 0) {
       console.error("Error: Description is required and cannot be empty.");
       return;
     }
-    if (!Author || Author.trim().length === 0 || typeof Author !== "string") {
+    if (!author || author.trim().length === 0 || typeof author !== "string") {
       console.error(
-        "Error: Author is required, cannot be empty, and must be a string."
+        "Error: author is required, cannot be empty, and must be a string."
       );
       return;
     }
     const tasks = loadTasks();
-    if (!isTaskUnique(tasks, description, Author)) {
+    if (!isTaskUnique(tasks, description, author)) {
       console.error(
         "Error: A task with the same description and author already exists."
       );
@@ -49,14 +49,13 @@ function addTasks(description, Author) {
       id: tasks.length > 0 ? Math.max(...tasks.map((task) => task.id)) + 1 : 1,
       description,
       status: "todo",
-      Author,
+      author,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     tasks.push(newTask);
     saveTasks(tasks);
     console.log(`Task added successfully (ID: ${newTask.id})`);
-    
   } catch (error) {
     console.error("Error in addTasks:", error.message);
   }
@@ -64,7 +63,28 @@ function addTasks(description, Author) {
 
 function saveTasks(tasks) {
   try {
+    // Validate that `tasks` is an array
+    if (!Array.isArray(tasks)) {
+      console.error("Invalid data type: tasks must be an array.");
+    }
+
+    // Validate that each task is an object and has the required keys
+    const requiredKeys = ["id", "description", "status", "author", "createdAt", "updatedAt"];
+    tasks.forEach((task, index) => {
+      if (typeof task !== "object" || task === null) {
+        console.error(`Invalid task at index ${index}: Task must be a non-null object.`);
+      }
+
+      requiredKeys.forEach((key) => {
+        if (!(key in task)) {
+          console.error(`Invalid task at index ${index}: Missing required key "${key}".`);
+        }
+      });
+    });
+
+    // If all validations pass, save tasks to file
     fs.writeFileSync(filePath, JSON.stringify(tasks, null, 4));
+    console.log("Tasks saved successfully.");
   } catch (error) {
     console.error("Error in saveTasks:", error.message);
   }
@@ -91,17 +111,87 @@ function deleteTask(id) {
     const tasks = loadTasks();
 
     const initialLength = tasks.length;
-    const updatedTasks = tasks.filter((task) => task.id !== id);
+    const taskFound = tasks.filter((task) => task.id !== id);
 
-    if (updatedTasks.length === initialLength) {
+    if (taskFound.length === initialLength) {
       console.error(`Task with ID:${id} not found`);
       return;
     }
 
-    saveTasks(updatedTasks);
+    saveTasks(taskFound);
     console.log(`Delete task with ID: ${id}.`);
   } catch (error) {
     console.error("Error in deleteTask:", error.message);
+  }
+}
+
+function updateTask(taskId, newDescription) {
+  try {
+    const tasks = loadTasks();
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          description: newDescription,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return task;
+    });
+    if (JSON.stringify(tasks) === JSON.stringify(updatedTasks)) {
+      console.error(`Task with ID:${taskId} not found`);
+      return;
+    }
+    saveTasks(updatedTasks);
+    console.log(`Task with ID:${taskId} updated successfully`);
+  } catch (error) {
+    console.error("Error in updateTask:", error.message);
+  }
+}
+
+function markInDone(taskId) {
+  try {
+    const tasks = loadTasks();
+    const changeStatus = tasks.map((task) => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          status: "done",
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return task;
+    });
+    if (JSON.stringify(tasks) === JSON.stringify(changeStatus)) {
+      console.error(`Task with ID:${taskId} not found`);
+    }
+    saveTasks(changeStatus);
+    console.log(`Task with ID:${taskId} status updated successfully`);
+  } catch (error) {
+    console.error("Error in markInDone", error.message);
+  }
+}
+
+function markInProgress(taskId) {
+  try {
+    const tasks = loadTasks();
+    const changeStatus = tasks.map((task) => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          status: "in-progress",
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return task;
+    });
+    if (JSON.stringify(tasks) === JSON.stringify(changeStatus)) {
+      console.error(`Task with ID:${taskId} not found`);
+    }
+    saveTasks(changeStatus);
+    console.log(`Task with ID:${taskId} status updated successfully`);
+  } catch (error) {
+    console.error("Error in markInProgress", error.message);
   }
 }
 
@@ -138,6 +228,31 @@ function main() {
         return;
       }
       deleteTask(parseInt(args[1]));
+      break;
+    case "update":
+      if (args.length !== 3) {
+        console.log("Usage: index update <id> <newDescription>");
+        return;
+      }
+      const id = parseInt(args[1]);
+      const newDescription = args[2];
+      updateTask(id, newDescription);
+      break;
+    case "mark-in-progress":
+      if (args.length !== 2) {
+        console.log("Usage: index mark-in-progress <id>");
+        return;
+      }
+      const taskId = parseInt(args[1]);
+      markInProgress(taskId);
+      break;
+    case "mark-done":
+      if (args.length !== 2) {
+        console.log("Usage: index mark-in-progress <id>");
+        return;
+      }
+      const markId = parseInt(args[1]);
+      markInDone(markId);
       break;
   }
 }
