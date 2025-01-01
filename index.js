@@ -84,7 +84,6 @@ function saveTasks(tasks) {
 
     // If all validations pass, save tasks to file
     fs.writeFileSync(filePath, JSON.stringify(tasks, null, 4));
-    console.log("Tasks saved successfully.");
   } catch (error) {
     console.error("Error in saveTasks:", error.message);
   }
@@ -187,6 +186,7 @@ function markInProgress(taskId) {
     });
     if (JSON.stringify(tasks) === JSON.stringify(changeStatus)) {
       console.error(`Task with ID:${taskId} not found`);
+      return
     }
     saveTasks(changeStatus);
     console.log(`Task with ID:${taskId} status updated successfully`);
